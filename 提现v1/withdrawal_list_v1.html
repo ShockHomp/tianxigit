@@ -1,0 +1,368 @@
+<{include file="../common/header.html" pageTitle='提现记录'}>
+<{include file="../common/menu.html" menuNav='201400'}>
+<style>
+    .laytable-cell-1-0-3 {
+        height: 100%;
+        max-width: 100%;
+    }
+</style>
+<div class="layui-body">
+    <!-- 导航开始 -->
+    <div class="admin-breadcrumb">
+         <span class="layui-breadcrumb">
+           提现记录
+        </span>
+    </div>
+    <!-- 导航结束 -->
+    <div class="layui-fluid" style="margin-top: 10px;">
+        <div class="layui-row">
+            <div class="layui-col-md12">
+                <!-- 成功失败提示 -->
+                <{include file="../common/message.html"}>
+                <div class="layui-card">
+                    <!-- 正文开始 -->
+                    <!-- 搜索开始 -->
+                    <div class="layui-card-body ">
+                        <form method="post" action="/reconciliation/?act=withdrawal_list"
+                              class="layui-form layui-col-space5" id="search-form" lay-filter="user-filter">
+                            <div class="layui-inline layui-show-xs-block">
+                                <input type="text" name="order_no" value="<{$filter.order_no}>" placeholder="流水号"
+                                       autocomplete="off" class="layui-input">
+                            </div>
+                            <input type="hidden" name="act" value="withdrawal_list">
+                            <div class="layui-inline layui-show-xs-block">
+                                <input type="text" name="member_id" value="<{$filter.member_id}>" placeholder="用户账号/id"
+                                       autocomplete="off" class="layui-input">
+                            </div>
+                            <div class="layui-inline">
+                                <div class="layui-inline">
+                                    <input type="text" value="<{$filter.start_time}>" name="start_time"
+                                           class="layui-input shijian" id="test5" placeholder="起始支付时间">
+                                </div>
+                                <div class="layui-inline">
+                                    -
+                                </div>
+                                <div class="layui-inline">
+                                    <input type="text" value="<{$filter.end_time}>" name="end_time"
+                                           class="layui-input shijian" id="test4" placeholder="结束支付时间">
+                                </div>
+                            </div>
+                            <div class="layui-inline layui-show-xs-block">
+                                <div class="layui-inline">
+                                    <input type="text" name="start_money" value="<{$filter.start_money}>"
+                                           placeholder="起始金额" autocomplete="off" class="layui-input">
+                                </div>
+                                <div class="layui-inline">
+                                    -
+                                </div>
+                                <div class="layui-inline">
+                                    <input type="text" name="end_money" value="<{$filter.end_money}>" placeholder="结束金额"
+                                           autocomplete="off" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <div class="layui-input-inline">
+                                    <select name="source_type" lay-verify="" lay-search="">
+                                        <option value="">提现类型</option>
+                                        <option value="1"
+                                        <{if $filter.source_type == '1'}> selected="selected" <{/if}>>红包提现</option>
+                                        <option value="2"
+                                        <{if $filter.source_type == '2'}> selected="selected" <{/if}>>积分提现</option>
+                                        <option value="3"
+                                        <{if $filter.source_type == '3'}> selected="selected" <{/if}>>积分提现</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 方法名 -->
+                            <input type="hidden" name="tab" id="tab" value="<{$filter.tab}>">
+                            <div class="layui-inline layui-show-xs-block">
+                                <button class="layui-btn" lay-submit="" lay-filter="sreach"><i class="layui-icon">&#xe615;</i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- 搜索结束 -->
+                    <!-- 列表开始 -->
+                    <div class="layui-tab" lay-filter="tab">
+                        <ul class="layui-tab-title">
+                            <li lay-id="0"
+                            <{if $filter.tab == 0}> class="layui-this" <{/if}> >全部申请(<font color="#f04844"><{$filter.total_num}></font>)</li>
+                            <li lay-id="1"
+                            <{if $filter.tab == 1}> class="layui-this" <{/if}> >待处理(<font color="#f04844"><{$filter.pending_num}></font>)</li>
+                            <li lay-id="2"
+                            <{if $filter.tab == 2}> class="layui-this" <{/if}> >提现成功(<font color="#f04844"><{$filter.success_num}></font>)</li>
+                            <li lay-id="3"
+                            <{if $filter.tab == 3}> class="layui-this" <{/if}> >提现失败(<font color="#f04844"><{$filter.error_num}></font>)</li>
+                        </ul>
+                    </div>
+                    <script type="text/html" id="toolbar">
+                        <if class="layui-btn-container">
+                            <a href="/reconciliation/?act=withdrawal_list_export&order_no=<{$filter.order_no}>&member_id=<{$filter.member_id}>&start_time=<{$filter.start_time}>&end_time=<{$filter.end_time}>&start_money=<{$filter.start_money}>&end_money=<{$filter.end_money}>&source_type=<{$filter.source_type}>&tab=<{$filter.tab}>"
+                               class="layui-btn layui-btn-sm" lay-event="">导出</a>
+                            <{if $filter.tab == 1}>
+                            <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="DelCheckData">批量提现
+                            </button>
+                            <{/if}>
+                            </div>
+                    </script>
+                    <div class="layui-card-body">
+                        <table lay-filter="table-hide" style="display: none"
+                               lay-data="{ toolbar: '#toolbar',defaultToolbar: [],limit: <{$filter.record_count}> }">
+                            <thead>
+                            <tr>
+                                <th lay-data="{type:'checkbox',field:'checkbox_id'}"></th>
+                                <th lay-data="{field:'id',align:'center'}">申请时间</th>
+                                <th lay-data="{field:'shop_id',align:'center'}">流水号</th>
+                                <th lay-data="{field:'shop_name',align:'center'}">用户ID</th>
+                                <th lay-data="{field:'total_price4',align:'center'}">提现类型</th>
+                                <th lay-data="{field:'total_price5',align:'center'}">提现金额</th>
+                                <th lay-data="{field:'invoice_company1',align:'center'}">到账金额</th>
+                                <th lay-data="{field:'invoice_company2',align:'center'}">提现状态</th>
+                                <th lay-data="{field:'invoice_company3',align:'center'}">处理时间</th>
+                                <th lay-data="{field:'invoice_company4',align:'center'}">操作</th>
+                            </tr>
+                            </thead>
+                            <{foreach from=$list item=item}>
+                            <tbody>
+                            <tr>
+                                <td><{$item.id}></td>
+                                <td><{if $item.c_time}><{$item.c_time|date_format:"%Y-%m-%d %H:%M:%S"}><{/if}></td>
+                                <td><{$item.serial_number}></td>
+                                <td><{$item.login_name}><br><{$item.nick_name}></td>
+                                <td><{if $item.source_type == '1'}> 红包提现 <{else if $item.source_type == '2'}> 积分提现
+                                    <{else}> 积分提现 <{/if}>
+                                </td>
+                                <td><{$item.price}></td>
+                                <td><{$item.account_price}></td>
+                                <td><{if $item.status == '1'}> 待处理 <{else if $item.status == '2'}> 提现成功 <{else}> 提现失败
+                                    <{/if}>
+                                </td>
+                                <td><{if $item.deal_time}><{$item.deal_time|date_format:"%Y-%m-%d %H:%M:%S"}><{/if}>
+                                </td>
+                                <td>
+                                    <a id="see" data-id="<{$item.id}>" class="layui-btn-normal layui-btn layui-btn-xs">查看</a>
+                                    <!--<{if $item.status == '1'}>-->
+                                    <!--<a data-id="<{$item.id}>" id="layui-save" data-type="<{$item.source_type}>"-->
+                                    <!--class="layui-btn layui-btn-xs">编辑</a>-->
+                                    <!--<{/if}>-->
+                                </td>
+                            </tr>
+                            </tbody>
+                            <{/foreach}>
+                        </table>
+                        <!-- 分页 -->
+                        <div id="page"></div>
+                    </div>
+                    <!-- 列表结束 -->
+                    <!-- 正文结束 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    layui.use(['form', 'table'], function () {
+        var form = layui.form;
+        var table = layui.table;
+        table.init("table-hide");
+        admin.paginate('<{$filter.record_count}>', '<{$filter.page}>', '<{$filter.page_size}>');
+        var element = layui.element;
+        //tab切换
+        element.on('tab(tab)', function (elem) {
+            $('#tab').val($(this).attr('lay-id'));
+            $("form").submit();
+        });
+
+        table.on('toolbar(table-hide)', function (obj) {
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch (obj.event) {
+                case 'DelCheckData':
+                    var data = checkStatus.data;
+                    var ids = '';
+                    for (j = 0, len = data.length; j < len; j++) {
+                        if (ids) {
+                            ids = ids + ',' + data[j].checkbox_id;
+                        } else {
+                            ids = data[j].checkbox_id;
+                        }
+                    }
+                    if (ids.length == 0) {
+                        layer.msg('请选择要提现的数据');
+                        return false;
+                    }
+                    layer.confirm('确定要提现选中的数据吗？', {
+                        time: 10000, //10s后自动关闭
+                        btn: ['确定', '取消'],
+                        yes: function (index) {
+                            layer.close(index);
+                            layer.msg('批量提现中,请耐心等待......', {
+                                icon: 1,
+                                time: 900000//2秒关闭（如果不配置，默认是3秒）
+                            }, function () {
+
+                            });
+                            $.ajax({
+                                type: 'POST',
+                                url: "/reconciliation/?act=withdrawal_batch",
+                                data: {id: ids},
+                                success: function (data) {
+                                    alert(data);
+                                    if (data == 1) {
+
+                                        layer.closeAll('msg');
+                                        layer.msg('提现成功', {icon: 1});
+                                        window.location.reload();
+                                    }
+                                    if (data == 3) {
+                                        layer.closeAll('msg');
+                                        layer.msg('提现失败', {icon: 5});
+                                        window.location.reload();
+                                    }
+                                    if (data == 4) {
+                                        layer.closeAll('msg');
+                                        layer.msg('网络异常请稍后重试', {icon: 5});
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+
+
+                        }
+                    });
+                    break;
+            }
+            ;
+        });
+
+        $(document).on('click', '#see', function () {
+            var id = $(this).attr('data-id');
+            $.ajax({
+                type: 'GET',
+                url: "/reconciliation/?act=withdrawal_see",
+                data: {id: id},
+                success: function (data) {
+                    layer.open({
+                        type: 1,
+                        skin: 'layui-layer-demo', //样式类名
+                        title: '查看提现记录', //不显示关闭按钮
+                        area: ['800px', '600px'],
+                        anim: 2,
+                        shadeClose: true, //开启遮罩关闭
+                        content: data,
+                        btn: ['关闭'] //只是为了演示
+
+                        , btn2: function () {
+                            layer.closeAll();
+                        }
+                    });
+                }
+            });
+        })
+
+
+        $(document).on("click", "#layui-save", function () {
+            var id = $(this).attr('data-id');
+            var source_type = $(this).attr('data-type');
+            $.ajax({
+                type: 'GET',
+                url: "/reconciliation/?act=ajax_withdrawal_save",
+                data: {id: id, source_type: source_type},
+                success: function (data) {
+
+                    if (!isJSON(data)) {
+                        layer.open({
+                            type: 1,
+                            skin: 'layui-layer-demo', //样式类名
+                            title: '编辑提现信息',
+                            area: ['800px', '400px'],
+                            anim: 2,
+                            shadeClose: true, //开启遮罩关闭
+                            content: data,
+                            btn: ['确定', '关闭'] //只是为了演示
+                            , btn1: function () {
+                                var loading = layer.load(2);
+                                var status = $("#status").val();
+                                // console.log(status);
+                                var source_type = $("#source_type").val();
+                                var id = $("#id").val();
+                                var reason = $("#reason").val();
+                                $.ajax({
+                                    type: 'GET',
+                                    url: "/reconciliation/?act=ajax_withdrawal_edit",
+                                    data: {id: id, source_type: source_type, status: status, reason: reason},
+                                    success: function (data) {
+                                        if (data == 1) {
+                                            layer.msg('操作成功', {icon: 1})
+                                            setTimeout(function () {
+                                                layer.close(loading);
+                                                layer.closeAll();
+                                                location.reload();
+                                            }, 1000)
+                                        } else if (data == 3) {
+                                            layer.close(loading);
+                                            layer.msg('当前不是待处理状态无法提现', {icon: 5})
+                                        } else {
+                                            layer.close(loading);
+                                            layer.msg('操作失败', {icon: 5})
+                                        }
+                                    }
+                                });
+                            }
+                            , btn2: function () {
+                                layer.closeAll();
+                            }
+                        });
+                    } else {
+                        layer.msg('权限不足', {icon: 5});
+                        return false;
+                    }
+                }
+            });
+        })
+
+        $(document).on('click', '#role', function () {
+            $(this).attr("id", "");
+            var status = $("#status").val();
+            var source_type = $("#source_type").val();
+            var id = $("#id").val();
+            var reason = $("#reason").val();
+            $.ajax({
+                type: 'GET',
+                url: "/reconciliation/?act=ajax_withdrawal_edit",
+                data: {id: id, source_type: source_type, status: status, reason: reason},
+                success: function (data) {
+                    if (data == 1) {
+                        layer.msg('操作成功', {icon: 1})
+                        setTimeout(function () {
+                            layer.closeAll();
+                            location.reload();
+                        }, 1000)
+                    } else {
+                        layer.msg('操作失败', {icon: 5})
+                    }
+                }
+            });
+        })
+    });
+
+    layui.use('laydate', function () {
+        var laydate = layui.laydate;
+        layui.use('laydate', function () {
+            var laydate = layui.laydate;
+            laydate.render({
+                elem: '#test5'
+                , type: 'datetime'
+            });
+            laydate.render({
+                elem: '#test4'
+                , type: 'datetime'
+            });
+        })
+    })
+
+
+</script>
+
+<{include file="../common/footer.html"}>
