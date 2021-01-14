@@ -1,0 +1,229 @@
+﻿mysql limit和offset用法
+limit和offset用法
+
+mysql里分页一般用limit来实现
+
+1. select* from article LIMIT 1,3
+
+2.select * from article LIMIT 3 OFFSET 1
+
+上面两种写法都表示取2,3,4三条条数据
+
+ 
+
+当limit后面跟两个参数的时候，第一个数表示要跳过的数量，后一位表示要取的数量,例如
+
+select* from article LIMIT 1,3 就是跳过1条数据,从第2条数据开始取，取3条数据，也就是取2,3,4三条数据
+
+当 limit后面跟一个参数的时候，该参数表示要取的数据的数量
+
+例如 select* from article LIMIT 3  表示直接取前三条数据，类似sqlserver里的top语法。
+
+当 limit和offset组合使用的时候，limit后面只能有一个参数，表示要取的的数量,offset表示要跳过的数量 。
+
+例如select * from article LIMIT 3 OFFSET 1 表示跳过1条数据,从第2条数据开始取，取3条数据，也就是取2,3,4三条数据
+
+
+
+
+
+思路6：窗口函数  （ 用法：
+
+select Score, dense_rank() over (order by Score desc)  as `Rank`
+from Scores;
+） 与下面语句相等 (
+select s1.score,count(distinct s2.score) as 'rank'
+from scores as s1,scores as s2
+where s1.score<=s2.score
+group by s1.id
+order by s1.score desc;
+)
+实际上，在mysql8.0中有相关的内置函数，而且考虑了各种排名问题：
+
+
+
+row_number(): 同薪不同名，相当于行号，例如3000、2000、2000、1000排名后为1、2、3、4
+
+rank(): 同薪同名，有跳级，例如3000、2000、2000、1000排名后为1、2、2、4
+
+dense_rank(): 同薪同名，无跳级，例如3000、2000、2000、1000排名后为1、2、2、3
+
+ntile(): 分桶排名，即首先按桶的个数分出第一二三桶，然后各桶内从1排名，实际不是很常用
+
+显然，本题是要用第三个函数。
+
+另外这三个函数必须要要与其搭档over()配套使用，over()中的参数常见的有两个，分别是
+
+
+
+partition by，按某字段切分
+
+order by，与常规order by用法一致，也区分ASC(默认)和DESC，因为排名总得有个依据
+
+注：下面代码仅在mysql8.0以上版本可用，最新OJ已支持。
+
+
+
+(查找)某网站包含两个表，Customers 表和 Orders 表。编写一个 SQL 查询，找出所有从不订购任何东西的客户。
+
+方法1 select customers.name as 'Customers'
+from customers
+where customers.id not in
+(
+    select customerid from orders
+);
+方法
+SELECT NAME AS CUSTOMERS
+FROM CUSTOMERS AS C
+LEFT JOIN ORDERS AS O
+ON C.ID = O.CUSTOMERID
+WHERE O.ID IS NULL;  
+ ( 可以有多个人工资都最高,且一样)编写一个 SQL 查询，找出每个部门工资最高的员工)
+SELECT
+    Department.name AS 'Department',
+    Employee.name AS 'Employee',
+    Salary
+FROM
+    Employee
+        JOIN
+    Department ON Employee.DepartmentId = Department.Id
+WHERE
+    (Employee.DepartmentId , Salary) IN
+    (   SELECT
+            DepartmentId, MAX(Salary)
+        FROM
+            Employee
+        GROUP BY DepartmentId
+    )
+;
+编写一个 SQL 查询，来删除 Person 表中所有重复的电子邮箱，重复的邮箱里只保留 Id 最小 的那个。
+
++----+------------------+
+| Id | Email            |
++----+------------------+
+| 1  | john@example.com |
+| 2  | bob@example.com  |
+| 3  | john@example.com |
++----+------------------+
+Id 是这个表的主键
+方法1 DELETE p1 FROM Person p1,
+    Person p2
+WHERE
+    p1.Email = p2.Email AND p1.Id > p2.Id
+方法2 DELETE from Person 
+Where Id not in (
+    Select Id 
+    From(
+    Select MIN(Id) as id
+    From Person 
+    Group by Email
+   ) t
+)
+编写一个 SQL 查询，来查找与之前（昨天的）日期相比温度更高的所有日期的 id 。
+
+返回结果 不要求顺序 。
+
+查询结果格式如下例：
+
+Weather
++----+------------+-------------+
+| id | recordDate | Temperature |
++----+------------+-------------+
+| 1  | 2015-01-01 | 10          |
+| 2  | 2015-01-02 | 25          |
+| 3  | 2015-01-03 | 20          |
+| 4  | 2015-01-04 | 30          |
+（DATEDIFF是两个日期的天数差集）SELECT w2.Id
+FROM Weather w1, Weather w2
+WHERE DATEDIFF(w2.RecordDate, w1.RecordDate) = 1
+AND w1.Temperature < w2.Temperature
+Trips 表中存所有出租车的行程信息。每段行程有唯一键 Id，Client_Id 和 Driver_Id 是 Users 表中 Users_Id 的外键。Status 是枚举类型，枚举成员为 (‘completed’, ‘cancelled_by_driver’, ‘cancelled_by_client’)。
+
++----+-----------+-----------+---------+--------------------+----------+
+| Id | Client_Id | Driver_Id | City_Id |        Status      |Request_at|
++----+-----------+-----------+---------+--------------------+----------+
+| 1  |     1     |    10     |    1    |     completed      |2013-10-01|
+| 2  |     2     |    11     |    1    | cancelled_by_driver|2013-10-01|
+| 3  |     3     |    12     |    6    |     completed      |2013-10-01|
+| 4  |     4     |    13     |    6    | cancelled_by_client|2013-10-01|
+| 5  |     1     |    10     |    1    |     completed      |2013-10-02|
+| 6  |     2     |    11     |    6    |     completed      |2013-10-02|
+| 7  |     3     |    12     |    6    |     completed      |2013-10-02|
+| 8  |     2     |    12     |    12   |     completed      |2013-10-03|
+| 9  |     3     |    10     |    12   |     completed      |2013-10-03| 
+| 10 |     4     |    13     |    12   | cancelled_by_driver|2013-10-03|
++----+-----------+-----------+---------+--------------------+----------+
+Users 表存所有用户。每个用户有唯一键 Users_Id。Banned 表示这个用户是否被禁止，Role 则是一个表示（‘client’, ‘driver’, ‘partner’）的枚举类型。
+
++----------+--------+--------+
+| Users_Id | Banned |  Role  |
++----------+--------+--------+
+|    1     |   No   | client |
+|    2     |   Yes  | client |
+|    3     |   No   | client |
+|    4     |   No   | client |
+|    10    |   No   | driver |
+|    11    |   No   | driver |
+|    12    |   No   | driver |
+|    13    |   No   | driver |
++----------+--------+--------+
+写一段 SQL 语句查出 2013年10月1日 至 2013年10月3日 期间非禁止用户的取消率。基于上表，你的 SQL 语句应返回如下结果，取消率（Cancellation Rate）保留两位小数。
+
+取消率的计算方式如下：(被司机或乘客取消的非禁止用户生成的订单数量) / (非禁止用户生成的订单总数)
+(sum(1) 相当于count(1) 求的就是行数统计
+sum(0)就是不统计)
+方法1 SELECT T.request_at AS `Day`, 
+    ROUND(
+            SUM(
+                IF(T.STATUS = 'completed',0,1)
+            )
+            / 
+            COUNT(T.STATUS),
+            2
+    ) AS `Cancellation Rate`
+FROM Trips AS T
+JOIN Users AS U1 ON (T.client_id = U1.users_id AND U1.banned ='No')
+JOIN Users AS U2 ON (T.driver_id = U2.users_id AND U2.banned ='No')
+WHERE T.request_at BETWEEN '2013-10-01' AND '2013-10-03'
+GROUP BY T.request_at
+（
+查找id为奇数的行： 
+方法1 id%2=1 
+方法2 mod(id ,2)=1
+方法3 select * from tablewhere id&1 ;
+查找id为偶数的行：
+
+select * from table where id=(id>>1)<<1;
+）
+给定一个 salary 表，如下所示，有 m = 男性 和 f = 女性 的值。交换所有的 f 和 m 值（例如，将所有 f 值更改为 m，反之亦然）。要求只使用一个更新（Update）语句，并且没有中间的临时表。
+方法1 
+update  salary set  sex=if(sex='m','f','m')
+方法2 
+UPDATE salary
+SET
+    sex = CASE sex
+        WHEN 'm' THEN 'f'
+        ELSE 'm'
+    END;
+
+SELECT id, 
+SUM(CASE WHEN month='Jan' THEN revenue END) AS Jan_Revenue,
+SUM(CASE WHEN month='Feb' THEN revenue END) AS Feb_Revenue,
+SUM(CASE WHEN month='Mar' THEN revenue END) AS Mar_Revenue,
+SUM(CASE WHEN month='Apr' THEN revenue END) AS Apr_Revenue,
+SUM(CASE WHEN month='May' THEN revenue END) AS May_Revenue,
+SUM(CASE WHEN month='Jun' THEN revenue END) AS Jun_Revenue,
+SUM(CASE WHEN month='Jul' THEN revenue END) AS Jul_Revenue,
+SUM(CASE WHEN month='Aug' THEN revenue END) AS Aug_Revenue,
+SUM(CASE WHEN month='Sep' THEN revenue END) AS Sep_Revenue,
+SUM(CASE WHEN month='Oct' THEN revenue END) AS Oct_Revenue,
+SUM(CASE WHEN month='Nov' THEN revenue END) AS Nov_Revenue,
+SUM(CASE WHEN month='Dec' THEN revenue END) AS Dec_Revenue
+FROM department
+GROUP BY id
+ORDER BY id;
+
+
+MYSQL 题库(https://blog.csdn.net/paul0127/article/details/82529216)
+
+
